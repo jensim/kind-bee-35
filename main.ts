@@ -9,5 +9,13 @@ import "$std/dotenv/load.ts";
 import { start } from "$fresh/server.ts";
 import manifest from "./fresh.gen.ts";
 import config from "./fresh.config.ts";
+import { scrape } from './func/scrape.ts'
+
+const MINUTE = 60_000
+const HOUR = 60*MINUTE;
+const DAY = 24*HOUR;
+
+await scrape();
+setInterval(scrape, 1*DAY);
 
 await start(manifest, config);

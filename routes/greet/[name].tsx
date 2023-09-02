@@ -1,5 +1,7 @@
-import { PageProps } from "$fresh/server.ts";
+import { RouteContext } from "$fresh/server.ts";
+import { getUsersGames } from '../../func/scrape.ts';
 
-export default function Greet(props: PageProps) {
-  return <div>Hello {props.params.name}</div>;
+export default async function Greet(_req: Request, ctx: RouteContext) {
+  const games = await getUsersGames(ctx.params.name);
+  return <div>Hello {ctx.params.name}, you have {games.response.games.length} games</div>;
 }
