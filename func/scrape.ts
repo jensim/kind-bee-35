@@ -98,7 +98,8 @@ async function reloadSteamUserGames(profileName: string): Promise<SteamGame[]> {
     const usersGames: SteamUserGamesResponse = await usersGamesResponse.json();
     const appIds = usersGames.response.games.map((game) => game.appid);
     await setSteamUserGames(profileName, appIds);
-    const gameFutures = appIds.map((appid, i) => reloadGame(appid, i));
+    const gameFutures = appIds.map((appid, i) => reloadGame(appid, i))
+        .filter((game) => game !== undefined && game !== null);
     return await Promise.all(gameFutures);
 }
 
@@ -138,8 +139,8 @@ async function reloadGame(appid: number, seqNum: number) {
         console.error(e);
         console.error('response text from steam was this:');
         console.error(text)
-        return {name: '⚠️ Unavailable ⚠️', appid: appid};
     }
+    return {name: '⚠️ Unavailable ⚠️', appid: appid};
 }
 
 function sleep(ms) {
