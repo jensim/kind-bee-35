@@ -110,7 +110,7 @@ async function reloadGame(appid: number, seqNum: number) {
     }
     const game: SteamGame | undefined = await getGame(appid);
     const now = new Date().getTime();
-    if (game?.reloaded && game.reloaded > now - 1 * DAY) {
+    if (game && game?.reloaded && game.reloaded > now - 1 * DAY) {
         return game;
     }
     await sleep(seqNum * 100);

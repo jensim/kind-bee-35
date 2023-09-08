@@ -80,7 +80,12 @@ export async function setLastSteamReload() {
 export async function updateGame(game: SteamGame): Promise<SteamGame> {
     try {
         const existing = await getGame(game.appid);
-        const patched = {...existing, ...game};
+        let patched: SteamGame = {};
+        if (existing) {
+            patched = {...existing, ...game};
+        } else {
+            patched = {...game};
+        }
         patched.reloaded = new Date().getTime();
         await kv.set([...key_steam_game_prefix, game.appid.toString()], patched)
         return patched;
