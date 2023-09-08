@@ -1,15 +1,10 @@
 import {DOMParser} from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
-import {
-    getGame,
-    getGames,
-    getLastSteamReload,
-    getSteamUserGames,
-    getSteamUserLastReload,
-    setLastSteamReload,
-    setSteamUserGames,
-    updateGame
-} from "./Repo.ts";
+import {getGame, getGames, getSteamUserGames, getSteamUserLastReload, setSteamUserGames, updateGame} from "./Repo.ts";
 import {DAY, SteamGame} from "../types/global.ts";
+
+// Steam is stidgy abaot what url we are calling from
+let steamConsecutive403 = 0;
+let steamFuse = true;
 
 export async function scrape() {
     await scrapeWemod();
@@ -37,20 +32,20 @@ async function scrapeWemod() {
 
         if (platformNames.some((name) => name.indexOf('Steam') !== -1)) {
             const hrefAttr = row.getAttribute('href');
-            setTimeout(() => scrapeWemodGame(hrefAttr), i*250);
+            setTimeout(() => scrapeWemodGame(hrefAttr), i * 250);
         }
     });
     console.log('Cheats: ' + table.length);
 }
 
 async function scrapeWemodGame(href: string) {
-    const wemodGameResponse = await fetch('https://www.wemod.com'+href);
+    const wemodGameResponse = await fetch('https://www.wemod.com' + href);
     const wemodGameHtml = await wemodGameResponse.text();
     const parser = new DOMParser();
     const gameHtml = parser.parseFromString(wemodGameHtml, 'text/html');
     const steamBg = gameHtml?.querySelector('div.view-background-image')
     const attrLink = steamBg?.getAttribute('style')
-    if(attrLink === null || attrLink === undefined) {
+    if (attrLink === null || attrLink === undefined) {
         return
     }
     const steamId = attrLink.split('https://cdn.cloudflare.steamstatic.com/steam/apps/')[1].split('/')[0]
@@ -108,7 +103,10 @@ async function reloadSteamUserGames(profileName: string): Promise<SteamGame[]> {
 }
 
 
-async function reloadGame(appid:number, seqNum:number) {
+async function reloadGame(appid: number, seqNum: number) {
+    if (!steamFuse) {
+        return {name: '⚠️ Unavailable ⚠️', appid: appid};
+    }
     const game: SteamGame | undefined = await getGame(appid);
     const now = new Date().getTime();
     if (game?.reloaded && game.reloaded > now - 1 * DAY) {
@@ -117,6 +115,14 @@ async function reloadGame(appid:number, seqNum:number) {
     await sleep(seqNum * 100);
     console.log('Fetching app with datas ' + appid);
     const response = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appid}`)
+    if (response.status === 403) {
+        steamConsecutive403++;
+        if (steamConsecutive403 > 25) {
+            console.log('Steam fuse blown! Try NODE_ENV '+Deno.env().NODE_ENV);
+            steamFuse = false;
+            return {name: '⚠️ Unavailable ⚠️', appid: appid}
+        }
+    }
     const text = await response.text();
     try {
         const json = JSON.parse(text);
@@ -132,7 +138,7 @@ async function reloadGame(appid:number, seqNum:number) {
         console.error(e);
         console.error('response text from steam was this:');
         console.error(text)
-        return game;
+        return {name: '⚠️ Unavailable ⚠️', appid: appid};
     }
 }
 
