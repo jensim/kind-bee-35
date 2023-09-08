@@ -119,10 +119,12 @@ async function reloadGame(appid: number, seqNum: number) {
     if (response.status === 403) {
         steamConsecutive403++;
         if (steamConsecutive403 > 25) {
-            console.log('Steam fuse blown! Try NODE_ENV '+Deno.env().NODE_ENV);
+            console.log('Steam fuse blown! Try NODE_ENV ' + Deno.env.get('NODE_ENV'));
             steamFuse = false;
             return {name: '⚠️ Unavailable ⚠️', appid: appid}
         }
+    } else {
+        steamConsecutive403 = 0;
     }
     const text = await response.text();
     try {
