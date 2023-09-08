@@ -90,11 +90,15 @@ export async function getUsersGames(profileName: string): Promise<SteamGame[]> {
 
 async function reloadSteamUserGames(profileName: string): Promise<SteamGame[]> {
     const key = Deno.env.get('STEAM_KEY');
-    const profileConvertUrl = `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1?key=${key}&vanityurl=${profileName}`;
-    const profileResponse = await fetch(profileConvertUrl);
+    if (!key) {
+        console.error('No steam api key found in env STEAM_KEY');
+        return [];
+    }
+    const profileConvertUrl = `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1?vanityurl=${profileName}`;
+    const profileResponse = await fetch(profileConvertUrl, {headers: {'x-webapi-key': key}});
     const profile: SteamUserProfileResponse = await profileResponse.json();
     const steamid = profile.response.steamid;
-    const usersGamesResponse = await fetch(`https://api.steampowered.com/IPlayerService/GetOwnedGames/v1?key=${key}&steamid=${steamid}&include_appinfo=1&include_played_free_games=1`)
+    const usersGamesResponse = await fetch(`https://api.steampowered.com/IPlayerService/GetOwnedGames/v1?steamid=${steamid}&include_appinfo=1&include_played_free_games=1`, {headers: {'x-webapi-key': key}})
     const usersGames: SteamUserGamesResponse = await usersGamesResponse.json();
     const appIds = usersGames.response.games.map((game) => game.appid);
     await setSteamUserGames(profileName, appIds);
@@ -115,7 +119,7 @@ async function reloadGame(appid: number, seqNum: number) {
     }
     await sleep(seqNum * 100);
     console.log('Fetching app with datas ' + appid);
-    const response = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appid}`)
+    const response = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appid}`, {headers: {'x-webapi-key': Deno.env.get('STEAM_KEY') || ''}})
     if (response.status === 403) {
         steamConsecutive403++;
         if (steamConsecutive403 > 25) {
