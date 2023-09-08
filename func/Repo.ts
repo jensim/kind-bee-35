@@ -77,10 +77,13 @@ export async function setLastSteamReload() {
     }
 }
 
-export async function updateGame(game: SteamGame) {
+export async function updateGame(game: SteamGame): Promise<SteamGame> {
     try {
-        game.reloaded = new Date().getTime();
-        await kv.set([...key_steam_game_prefix, game.appid.toString()], game)
+        const existing = await getGame(game.appid);
+        const patched = {...existing, ...game};
+        patched.reloaded = new Date().getTime();
+        await kv.set([...key_steam_game_prefix, game.appid.toString()], patched)
+        return patched;
     } catch (e) {
         console.error('Failed to set game');
         console.error(e)

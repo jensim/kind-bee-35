@@ -13,7 +13,7 @@ import { scrape } from './func/scrape.ts'
 import {DAY} from "./types/global.ts";
 
 
-await scrape();
-setInterval(scrape, 1 * DAY);
+//await scrape();
+//setInterval(scrape, 1 * DAY);
 
 await start(manifest, config);

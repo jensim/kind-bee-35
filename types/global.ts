@@ -6,6 +6,8 @@ export const DAY = 24 * HOUR;
 export type SteamGame = {
     appid: number,
     name: string,
+    wemodSupport: boolean,
+    wemodSupportSeen: number,
     reloaded?: number,
     genres?: string[],
     platforms?: string[],
